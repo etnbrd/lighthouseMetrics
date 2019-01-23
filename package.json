@@ -1,0 +1,42 @@
+{
+  "name": "lighthousemetrics",
+  "version": "1.0.0",
+  "bin": {
+    "lighthouseMetrics": "bin/lighthouseMetrics"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@oclif/command": "^1.5.8",
+    "@oclif/config": "^1.12.0",
+    "@oclif/errors": "^1.2.2",
+    "@oclif/plugin-help": "^2.1.4",
+    "chalk": "^2.4.2",
+    "d3-array": "^2.0.3",
+    "lighthouse": "^4.0.0",
+    "table": "^5.2.1"
+  },
+  "files": [
+    "*"
+  ],
+  "description": "A wrapper around lighthouse to measure the performance of a set of Urls, and compare the main metrics. It makes a certain number of request to each url, to average over the network conditions, and smooth the results.",
+  "main": "index.js",
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://gitlab.com/etnbrd/lighthousemetrics.git"
+  },
+  "keywords": [
+    "lighthouse",
+    "chrome",
+    "devtools",
+    "cli"
+  ],
+  "author": "Etienne Brodu <etn@etnbrd.com>",
+  "bugs": {
+    "url": "https://gitlab.com/etnbrd/lighthousemetrics/issues"
+  },
+  "homepage": "https://gitlab.com/etnbrd/lighthousemetrics#readme"
+}

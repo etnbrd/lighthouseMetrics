@@ -1,0 +1,114 @@
+#!/usr/bin/env node
+
+const {Command, flags} = require('@oclif/command')
+const errorHandler = require('@oclif/errors/handle')
+const { table, getBorderCharacters } = require('table')
+const chalk = require('chalk')
+
+const analysis = require('../src/analysis')
+
+const jsonToArray = (data) => {
+  // We assume all the data are homogeneous
+  const headers = Object.keys(data[0])
+
+  return [
+    headers,
+    ...data.map(datum => headers.map(header => datum[header]))
+  ]
+}
+
+const jsonToCsv = (data) =>
+  jsonToArray(data).map(line => line.join(', ')).join('\n')
+
+class lighthouseMetrics extends Command {
+  async run() {
+
+    const { argv, flags } = this.parse(lighthouseMetrics)
+
+    const tests = argv.map(arg => {
+      const [ label, url ] = arg.split('=')
+      return { label, url }
+    })
+
+    const {
+      results,
+      summaries,
+      analyses,
+    } = await analysis({
+      tests,
+      samples: flags.samples,
+    })
+
+    const arr = jsonToArray(analyses).map((line, i) => {
+      if (i === 0) { // header
+        return line.map(header => header.slice(0, 12))
+      }
+
+      if (i === 1) { // first line: control. Should display 100 everywhere
+        return line.map((cell, i) =>
+          i === 0 // The first cell is the label
+          ? cell
+          : cell + '%')
+      }
+
+      return line.map((cell, i) =>
+        i === 0 // The first cell is the label
+        ? cell
+        : cell > 100
+          ? '' + chalk.red(Math.round(cell * 100) / 100) + '%'
+          : '' + chalk.green(Math.round(cell * 100) / 100) + '%'
+      )
+    })
+
+    // We use stderr to let stdout for the actual results
+    console.error(chalk.gray('---'))
+    console.error(table(arr, {
+      border: getBorderCharacters(`void`),
+      columnDefault: { paddingLeft: 0, paddingRight: 1 },
+      drawHorizontalLine: () => { return false }
+    }))
+    console.error(chalk.gray('---'))
+
+    if (flags.output === 'csv')
+      console.log(jsonToCsv(results))
+
+    if (flags.output === 'json')
+      console.log(results)
+
+  }
+}
+
+// Allow variable number of arguments. Required as the argumants are the tuples
+// of label=urls to tests.
+lighthouseMetrics.strict = false
+
+lighthouseMetrics.args = [{
+  // Require at least an url
+  required: true
+}]
+
+lighthouseMetrics.description =
+`A wrapper around lighthouse to measure the performance of a set of Urls, and compare the main metrics.`
+
+lighthouseMetrics.usage =
+`label1=https://url1 label2=https://url2 ...`
+
+lighthouseMetrics.flags = {
+  version: flags.version(),
+  help: flags.help(),
+  samples: flags.string({
+    char: 's',
+    description: 'sample size for each url to test',
+    default: '30',
+    parse: s => Number(s),
+  }),
+  format: flags.string({
+    char: 'f',
+    description: 'format to use for the results output',
+    default: 'csv',
+    options: ['csv', 'json']
+  })
+}
+
+lighthouseMetrics.run()
+.catch(errorHandler)
